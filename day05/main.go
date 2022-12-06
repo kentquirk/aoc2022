@@ -80,6 +80,18 @@ func (c *Cargo) ExecSingle() {
 	}
 }
 
+func (c *Cargo) MoveMulti(cmd Command) {
+	if crates, ok := c.stacks[cmd.FrIx].PopN(cmd.Qty); ok {
+		c.stacks[cmd.ToIx].PushN(crates)
+	}
+}
+
+func (c *Cargo) ExecMulti() {
+	for _, cmd := range c.commands {
+		c.MoveMulti(cmd)
+	}
+}
+
 func (c *Cargo) Tops() string {
 	tops := ""
 	for _, s := range c.stacks {
@@ -104,13 +116,24 @@ func (s *Stack) Push(str string) {
 	s.s = append(s.s, str)
 }
 
+func (s *Stack) PushN(a []string) {
+	s.s = append(s.s, a...)
+}
+
 func (s *Stack) Pop() (string, bool) {
-	if len(s.s) > 0 {
-		r := s.s[len(s.s)-1]
-		s.s = s.s[:len(s.s)-1]
-		return r, true
+	if a, ok := s.PopN(1); ok {
+		return a[0], ok
 	}
 	return "", false
+}
+
+func (s *Stack) PopN(n int) ([]string, bool) {
+	if len(s.s) >= n {
+		r := s.s[len(s.s)-n:]
+		s.s = s.s[:len(s.s)-n]
+		return r, true
+	}
+	return nil, false
 }
 
 func (s *Stack) Top() (string, bool) {
@@ -131,6 +154,12 @@ func part1(lines []string) {
 	fmt.Println(cargo.Tops())
 }
 
+func part2(lines []string) {
+	cargo := Parse(lines)
+	cargo.ExecMulti()
+	fmt.Println(cargo.Tops())
+}
+
 func main() {
 	f, err := os.Open("./input.txt")
 	if err != nil {
@@ -142,4 +171,5 @@ func main() {
 	}
 	lines := strings.Split(string(b), "\n")
 	part1(lines)
+	part2(lines)
 }
