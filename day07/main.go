@@ -148,6 +148,18 @@ func (t *totaller) Visit(f *FileTree) {
 	}
 }
 
+type freeSpace struct {
+	removeAtLeast int
+	best          *FileTree
+}
+
+func (f *freeSpace) Visit(t *FileTree) {
+	sz := t.Size()
+	if sz > f.removeAtLeast && sz < f.best.Size() {
+		f.best = t
+	}
+}
+
 func main() {
 	f, err := os.Open("./input.txt")
 	if err != nil {
@@ -163,4 +175,13 @@ func main() {
 	tt := &totaller{}
 	root.Walk(tt)
 	fmt.Println(tt.total)
+
+	disksize := 70_000_000
+	needed := 30_000_000
+	used := root.Size()
+	unused := disksize - used
+	fs := &freeSpace{removeAtLeast: needed - unused, best: root}
+	root.Walk(fs)
+	fmt.Println("remove at least ", fs.removeAtLeast)
+	fmt.Println(fs.best.Path(), fs.best.Size())
 }
