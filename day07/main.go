@@ -46,10 +46,14 @@ func (f *FileTree) Size() int {
 	return t
 }
 
-func (f *FileTree) Walk(functor func(f *FileTree)) {
-	functor(f)
+type Visitor interface {
+	Visit(f *FileTree)
+}
+
+func (f *FileTree) Walk(visitor Visitor) {
+	visitor.Visit(f)
 	for _, d := range f.Dirs {
-		d.Walk(functor)
+		d.Walk(visitor)
 	}
 }
 
@@ -138,7 +142,7 @@ type totaller struct {
 	total int
 }
 
-func (t *totaller) walker(f *FileTree) {
+func (t *totaller) Visit(f *FileTree) {
 	if f.Size() <= 100000 {
 		t.total += f.Size()
 	}
@@ -155,8 +159,8 @@ func main() {
 	}
 	lines := strings.Split(string(b), "\n")
 	root := parse(lines)
-	root.Print(0)
-	var tt totaller
-	root.Walk(tt.walker)
-	fmt.Println(tt)
+	// root.Print(0)
+	tt := &totaller{}
+	root.Walk(tt)
+	fmt.Println(tt.total)
 }
