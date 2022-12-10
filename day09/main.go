@@ -30,6 +30,7 @@ func (p Point) Sub(other Point) Point {
 
 func (p Point) Adjacent(other Point) bool {
 	d := p.Sub(other)
+	// fmt.Printf("%v %v %v %t\n", p, other, d, d.X <= 1 && d.X >= -1 && d.Y <= 1 && d.Y >= -1)
 	return d.X <= 1 && d.X >= -1 && d.Y <= 1 && d.Y >= -1
 }
 
@@ -38,24 +39,28 @@ type Move struct {
 	Count int
 }
 
+// Head is Nodes[0]
 type Rope struct {
-	Head          Point
-	Tail          Point
-	TailPositions map[Point]int
+	Nodes         []Point
+	TailPositions map[Point]struct{}
 }
 
-func NewRope() *Rope {
+func NewRope(length int) *Rope {
 	return &Rope{
+		Nodes: make([]Point, length),
 		// put first tail position into the map
-		TailPositions: map[Point]int{{}: 1},
+		TailPositions: map[Point]struct{}{{}: struct{}{}},
 	}
 }
 
-func (r *Rope) Move(move Move) {
-	r.Head = r.Head.Add(move.Delta)
-	if !r.Head.Adjacent(r.Tail) {
-		// figure out where to move the tail
-		diff := r.Head.Sub(r.Tail)
+func (r *Rope) MoveOne(delta Point) {
+	r.Nodes[0] = r.Nodes[0].Add(delta)
+	for i := 1; i < len(r.Nodes); i++ {
+		if r.Nodes[i-1].Adjacent(r.Nodes[i]) {
+			break // nothing else moves
+		}
+		// figure out where to move the next node
+		diff := r.Nodes[i-1].Sub(r.Nodes[i])
 		if diff.X > 1 {
 			diff.X = 1
 		}
@@ -68,15 +73,16 @@ func (r *Rope) Move(move Move) {
 		if diff.Y < -1 {
 			diff.Y = -1
 		}
-		r.Tail = r.Tail.Add(diff)
-		r.TailPositions[r.Tail]++
+		r.Nodes[i] = r.Nodes[i].Add(diff)
 	}
+	// fmt.Println(r)
+	r.TailPositions[r.Nodes[len(r.Nodes)-1]] = struct{}{}
 }
 
 func (r *Rope) ExecuteMoves(moves []Move) {
 	for _, m := range moves {
 		for n := 0; n < m.Count; n++ {
-			r.Move(m)
+			r.MoveOne(m.Delta)
 		}
 		// fmt.Println(r)
 	}
@@ -115,7 +121,11 @@ func main() {
 	}
 	lines := strings.Split(string(b), "\n")
 	moves := Parse(lines)
-	rope := NewRope()
+	rope := NewRope(2)
 	rope.ExecuteMoves(moves)
 	fmt.Println(len(rope.TailPositions))
+
+	longrope := NewRope(10)
+	longrope.ExecuteMoves(moves)
+	fmt.Println(len(longrope.TailPositions))
 }
