@@ -11,21 +11,21 @@ import (
 	"strings"
 )
 
-func MulOp(operand int) func(int) int {
+func MulOp(operand int, worryLess func(int) int) func(int) int {
 	return func(v int) int {
-		return v * operand
+		return worryLess(v * operand)
 	}
 }
 
-func SquareOp() func(int) int {
+func SquareOp(worryLess func(int) int) func(int) int {
 	return func(v int) int {
-		return v * v
+		return worryLess(v * v)
 	}
 }
 
-func AddOp(operand int) func(int) int {
+func AddOp(operand int, worryLess func(int) int) func(int) int {
 	return func(v int) int {
-		return v + operand
+		return worryLess(v + operand)
 	}
 }
 
@@ -55,7 +55,7 @@ type Monkey struct {
 
 func (m *Monkey) Evaluate() {
 	for _, item := range m.Items {
-		item.Worry = m.Op(item.Worry) / 3
+		item.Worry = m.Op(item.Worry)
 		if m.Test(item.Worry) {
 			m.Throw(item, m.TrueDest)
 		} else {
@@ -86,21 +86,21 @@ func getNumbers(s string) []int {
 	return nums
 }
 
-func buildOp(s string) func(int) int {
+func buildOp(s string, worryLess func(int) int) func(int) int {
 	oppat := regexp.MustCompile(`new = old (\*|\+) (old|[0-9]+)`)
 	parts := oppat.FindStringSubmatch(s)
 	if parts[2] == "old" {
-		return SquareOp()
+		return SquareOp(worryLess)
 	}
 
 	n, _ := strconv.Atoi(parts[2])
 	if parts[1] == "*" {
-		return MulOp(n)
+		return MulOp(n, worryLess)
 	}
-	return AddOp(n)
+	return AddOp(n, worryLess)
 }
 
-func (p *Pandemonium) AddMonkey(setup []string) {
+func (p *Pandemonium) AddMonkey(setup []string, worryLess func(int) int) {
 	monkeyID := getNumbers(setup[0])[0]
 	if len(p.Monkeys) != monkeyID {
 		panic("wrong monkey!")
@@ -109,7 +109,7 @@ func (p *Pandemonium) AddMonkey(setup []string) {
 	for _, w := range getNumbers(setup[1]) {
 		m.Items = append(m.Items, &Item{Worry: w})
 	}
-	m.Op = buildOp(setup[2])
+	m.Op = buildOp(setup[2], worryLess)
 	m.Test = DivTest(getNumbers(setup[3])[0])
 	m.TrueDest = getNumbers(setup[4])[0]
 	m.FalseDest = getNumbers(setup[5])[0]
@@ -138,10 +138,10 @@ func (p *Pandemonium) MonkeyBusiness() int {
 	return biz[len(biz)-2] * biz[len(biz)-1]
 }
 
-func Parse(lines []string) *Pandemonium {
+func Parse(lines []string, worryLess func(int) int) *Pandemonium {
 	p := &Pandemonium{}
 	for len(lines) > 6 {
-		p.AddMonkey(lines[:7])
+		p.AddMonkey(lines[:7], worryLess)
 		lines = lines[7:]
 	}
 	return p
@@ -157,7 +157,7 @@ func main() {
 		log.Fatal(err)
 	}
 	lines := strings.Split(string(b), "\n")
-	p := Parse(lines)
+	p := Parse(lines, func(x int) int { return x / 3 })
 	for i := 0; i < 20; i++ {
 		// p.Print()
 		p.Round()
