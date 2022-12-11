@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 	"strings"
@@ -13,7 +13,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	b, err := ioutil.ReadAll(f)
+	b, err := io.ReadAll(f)
 	if err != nil {
 		log.Fatal(err)
 	}
