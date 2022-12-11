@@ -2,22 +2,13 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 	"strings"
 )
 
-func main() {
-	f, err := os.Open("./input.txt")
-	if err != nil {
-		log.Fatal(err)
-	}
-	b, err := ioutil.ReadAll(f)
-	if err != nil {
-		log.Fatal(err)
-	}
-	lines := strings.Split(string(b), "\n")
+func part1(lines []string) {
 	vm := NewVM()
 	vm.Load(lines)
 	vm.Reset()
@@ -31,4 +22,17 @@ func main() {
 		}
 	}
 	fmt.Println(sum)
+}
+
+func main() {
+	f, err := os.Open("./input.txt")
+	if err != nil {
+		log.Fatal(err)
+	}
+	b, err := io.ReadAll(f)
+	if err != nil {
+		log.Fatal(err)
+	}
+	lines := strings.Split(string(b), "\n")
+	part1(lines)
 }
