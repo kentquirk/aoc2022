@@ -69,6 +69,7 @@ func (m *Monkey) Evaluate() {
 // Pandemonium is the collective name for a group of flying monkeys.
 type Pandemonium struct {
 	Monkeys []*Monkey
+	lcm     int
 }
 
 func (p *Pandemonium) Throw(item *Item, newMonkey int) {
@@ -110,7 +111,9 @@ func (p *Pandemonium) AddMonkey(setup []string, worryLess func(int) int) {
 		m.Items = append(m.Items, &Item{Worry: w})
 	}
 	m.Op = buildOp(setup[2], worryLess)
-	m.Test = DivTest(getNumbers(setup[3])[0])
+	modulus := getNumbers(setup[3])[0]
+	p.lcm *= modulus
+	m.Test = DivTest(modulus)
 	m.TrueDest = getNumbers(setup[4])[0]
 	m.FalseDest = getNumbers(setup[5])[0]
 	m.Throw = p.Throw
@@ -138,8 +141,12 @@ func (p *Pandemonium) MonkeyBusiness() int {
 	return biz[len(biz)-2] * biz[len(biz)-1]
 }
 
+func (p *Pandemonium) WorryMod(x int) int {
+	return x % p.lcm
+}
+
 func Parse(lines []string, worryLess func(int) int) *Pandemonium {
-	p := &Pandemonium{}
+	p := &Pandemonium{lcm: 1}
 	for len(lines) > 6 {
 		p.AddMonkey(lines[:7], worryLess)
 		lines = lines[7:]
@@ -148,7 +155,7 @@ func Parse(lines []string, worryLess func(int) int) *Pandemonium {
 }
 
 func main() {
-	f, err := os.Open("./inputsample.txt")
+	f, err := os.Open("./input.txt")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -159,6 +166,14 @@ func main() {
 	lines := strings.Split(string(b), "\n")
 	p := Parse(lines, func(x int) int { return x / 3 })
 	for i := 0; i < 20; i++ {
+		// p.Print()
+		p.Round()
+	}
+	p.Print()
+	fmt.Println(p.MonkeyBusiness())
+
+	p = Parse(lines, p.WorryMod)
+	for i := 0; i < 10000; i++ {
 		// p.Print()
 		p.Round()
 	}
