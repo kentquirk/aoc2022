@@ -72,6 +72,21 @@ func (g *Grid) Connect(r, c int) {
 	}
 }
 
+func (g *Grid) GetLowestPoints() []*Square {
+	var candidates []*Square
+
+	nRows := len(g.Squares)
+	nCols := len(g.Squares[0])
+	for r := 0; r < nRows; r++ {
+		for c := 0; c < nCols; c++ {
+			if g.Squares[r][c].Height == 0 {
+				candidates = append(candidates, g.Squares[r][c])
+			}
+		}
+	}
+	return candidates
+}
+
 func (g *Grid) GenerateGraph() {
 	nRows := len(g.Squares)
 	nCols := len(g.Squares[0])
@@ -82,7 +97,7 @@ func (g *Grid) GenerateGraph() {
 	}
 }
 
-func (g *Grid) Print(distance int) {
+func (g *Grid) Print(sr int, sc int, distance int) {
 	nRows := len(g.Squares)
 	nCols := len(g.Squares[0])
 	for r := 0; r < nRows; r++ {
@@ -90,7 +105,7 @@ func (g *Grid) Print(distance int) {
 			sq := g.Squares[r][c]
 			fg := 34
 			bg := 0
-			if r == g.StartRow && c == g.StartCol {
+			if r == sr && c == sc {
 				bg = 42
 			}
 			if sq.PathIx >= 0 {
@@ -142,8 +157,36 @@ func part1(lines []string) int {
 		p.(*Square).PathIx = int(distance) - i - 1
 	}
 
-	grid.Print(int(distance))
+	grid.Print(grid.StartRow, grid.StartCol, int(distance))
 	return int(distance)
+}
+
+func part2(lines []string) int {
+	grid := Parse(lines)
+
+	candidates := grid.GetLowestPoints()
+	var bestsq *Square
+	var bestdist float64 = 1000000
+	var bestpath []astar.Pather
+	for _, c := range candidates {
+		path, distance, found := astar.Path(
+			c,
+			grid.Squares[grid.EndRow][grid.EndCol],
+		)
+		if found && distance < bestdist {
+			bestdist = distance
+			bestpath = path
+			bestsq = c
+		}
+	}
+	fmt.Println()
+	for i, p := range bestpath {
+		// pather returns the path in reverse order, so compensate
+		p.(*Square).PathIx = int(bestdist) - i - 1
+	}
+
+	grid.Print(bestsq.Row, bestsq.Col, int(bestdist))
+	return int(bestdist)
 }
 
 func main() {
@@ -157,4 +200,5 @@ func main() {
 	}
 	lines := strings.Split(string(b), "\n")
 	fmt.Println(part1(lines))
+	fmt.Println(part2(lines))
 }
