@@ -101,10 +101,11 @@ func (c *Cave) DrawWall(from Point, to Point) {
 	}
 }
 
-func (c *Cave) Drop(pt Point) Point {
+func (c *Cave) Drop(pt Point, until func(Point) bool) Point {
 	for {
 		newPt := Point{pt.X, pt.Y + 1}
-		if newPt.Y > c.Max.Y {
+		if until(newPt) {
+			c.Cells[pt] = Sand
 			return newPt
 		}
 		if c.Cells[newPt] == Empty {
@@ -120,6 +121,9 @@ func (c *Cave) Drop(pt Point) Point {
 		if c.Cells[newPt] == Empty {
 			pt = newPt
 			continue
+		}
+		if s, ok := c.Cells[pt]; ok {
+			fmt.Println("reuse at ", pt, s)
 		}
 		c.Cells[pt] = Sand
 		return pt
@@ -149,11 +153,10 @@ func part1(lines []string) {
 	c.Parse(lines)
 	c.CheckLimits(origin)
 	c.Cells[origin] = Origin
-	c.Print()
 
 	grains := 0
 	for {
-		pt := c.Drop(origin)
+		pt := c.Drop(origin, func(p Point) bool { return p.Y > c.Max.Y })
 		if pt.Y > c.Max.Y {
 			break
 		}
@@ -161,6 +164,34 @@ func part1(lines []string) {
 	}
 	c.Print()
 	fmt.Println(grains)
+}
+
+func part2(lines []string) {
+	c := NewCave()
+	origin := Point{500, 0}
+	c.Parse(lines)
+	c.DrawWall(Point{c.Min.X - 1, c.Max.Y + 2}, Point{c.Max.X + 1, c.Max.Y + 2})
+	c.CheckLimits(origin)
+
+	grains := 0
+	for {
+		grains++
+		pt := c.Drop(origin, func(p Point) bool { return p.Y == c.Max.Y })
+		c.CheckLimits(pt)
+		if pt == origin {
+			break
+		}
+	}
+	c.DrawWall(Point{c.Min.X, c.Max.Y}, c.Max)
+	// c.Print()
+	fmt.Println(grains)
+	n := 0
+	for _, s := range c.Cells {
+		if s == Sand {
+			n++
+		}
+	}
+	fmt.Println(n)
 }
 
 func main() {
@@ -174,4 +205,5 @@ func main() {
 	}
 	lines := strings.Split(string(b), "\n")
 	part1(lines)
+	part2(lines)
 }
