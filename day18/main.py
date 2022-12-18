@@ -5,6 +5,9 @@ import collections
 def cube(tup):
     return [float(x) for x in tup]
 
+# for each cube, rather than worrying about neighbors, we can define faces that
+# live between the cubes on each axis and will be positioned in a way that two
+# touching faces have equal values that can serve as keys in a set or a map.
 def faces(cube):
     return [
         ('x', cube[0]-0.5, cube[1], cube[2]),
@@ -25,6 +28,10 @@ def minmax(r):
     return min(r), max(r)
 
 def part1(cubes):
+    '''
+    Collect all the faces into a set, except that when we go to add one, if
+    it's already there we delete it.
+    '''
     openfaces=set()
 
     for c in cubes:
@@ -34,6 +41,13 @@ def part1(cubes):
     return count
 
 def part2(cubes, opencount):
+    '''
+    Now that we have the set of cubes, we can fill in all the empty cubes in its vicinity
+    with fake cubes, and then iterate multiple times, removing all of the fake cubes that
+    have faces with no (real or fake) neighbors, which are the ones that touch outside air.
+    Once we can't find any more, the remaining fake cubes must be interior cubes, so we can
+    count the exposed faces on them and subtract that from the face count.
+    '''
     minx, maxx = minmax([c[0] for c in cubes])
     miny, maxy = minmax([c[1] for c in cubes])
     minz, maxz = minmax([c[2] for c in cubes])
