@@ -25,12 +25,16 @@ def collectFace(f):
 def minmax(r):
     return min(r), max(r)
 
-if __name__ == "__main__":
-    f = open("./input.txt")
-    lines = f.readlines()
-    cubes = [cube(l.strip()) for l in lines]
+def part1(cubes):
     for c in cubes:
         for f in faces(c):
             collectFace(f)
     count = len(openfaces)
-    print(count)
+    return count
+
+
+if __name__ == "__main__":
+    f = open("./input.txt")
+    lines = f.readlines()
+    cubes = [cube(l.strip()) for l in lines]
+    print(part1(cubes))
