@@ -3,16 +3,16 @@ import itertools
 import collections
 
 def cube(l):
-    return [10*int(x) for x in l.split(',')]
+    return [float(x) for x in l.split(',')]
 
 def faces(cube):
     return [
-        ('x', cube[0]-5, cube[1], cube[2]),
-        ('x', cube[0]+5, cube[1], cube[2]),
-        ('y', cube[0], cube[1]-5, cube[2]),
-        ('y', cube[0], cube[1]+5, cube[2]),
-        ('z', cube[0], cube[1], cube[2]-5),
-        ('z', cube[0], cube[1], cube[2]+5),
+        ('x', cube[0]-0.5, cube[1], cube[2]),
+        ('x', cube[0]+0.5, cube[1], cube[2]),
+        ('y', cube[0], cube[1]-0.5, cube[2]),
+        ('y', cube[0], cube[1]+0.5, cube[2]),
+        ('z', cube[0], cube[1], cube[2]-0.5),
+        ('z', cube[0], cube[1], cube[2]+0.5),
     ]
 
 openfaces=set()
