@@ -226,6 +226,16 @@ func part1(lines []string, maxgenerations int, animate bool) int {
 	return field.NEmpty()
 }
 
+func part2(lines []string, maxgenerations int) int {
+	field := Parse(lines)
+	for g := 0; g < maxgenerations; g++ {
+		if field.Generation() == 0 {
+			return g + 1
+		}
+	}
+	return maxgenerations
+}
+
 func main() {
 	f, err := os.Open("./input.txt")
 	if err != nil {
@@ -236,5 +246,6 @@ func main() {
 		log.Fatal(err)
 	}
 	lines := strings.Split(string(b), "\n")
-	fmt.Println(part1(lines, 10, true))
+	// fmt.Println(part1(lines, 10, true))
+	fmt.Println(part2(lines, 10000))
 }
