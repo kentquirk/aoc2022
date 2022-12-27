@@ -14,9 +14,14 @@ import (
 type Action interface {
 	Do(sys *System)
 	String() string
+	IsMarked() bool
+	Unmark()
 }
 
 // valve is a node, tunnel is an edge
+// actions are the things you can do when you're at a node (open a valve, move along a tunnel)
+// When we execute an action, we mark it used, and we won't use it again during that
+// pass, but we clear the used flags before the next action.
 type Valve struct {
 	Name        string
 	FlowRate    int
@@ -27,31 +32,50 @@ type Valve struct {
 }
 
 type MoveAction struct {
-	From string
-	To   string
-	Via  string
+	Marked bool
+	From   string
+	To     string
+	Via    string
 }
 
-func (a MoveAction) Do(sys *System) {
+func (a *MoveAction) Do(sys *System) {
 	sys.Current = a.To
 	sys.Ticks++
+	a.Marked = true
 }
 
-func (a MoveAction) String() string {
-	return fmt.Sprintf("Move from %s to %s via %s", a.From, a.To, a.Via)
+func (a *MoveAction) String() string {
+	return fmt.Sprintf("Move from %s to %s via %s, using 1 minute", a.From, a.To, a.Via)
+}
+
+func (a *MoveAction) IsMarked() bool {
+	return a.Marked
+}
+
+func (a *MoveAction) Unmark() {
+	a.Marked = false
 }
 
 type OpenAction struct {
-	At string
+	Mark bool
+	At   string
 }
 
-func (a OpenAction) Do(sys *System) {
+func (a *OpenAction) Do(sys *System) {
 	sys.OpenValves.Add(a.At)
 	sys.Ticks++
 }
 
-func (a OpenAction) String() string {
-	return fmt.Sprintf("Open valve in %s", a.At)
+func (a *OpenAction) String() string {
+	return fmt.Sprintf("Open valve in %s, using 1 minute", a.At)
+}
+
+func (a *OpenAction) IsMarked() bool {
+	return a.Mark
+}
+
+func (a *OpenAction) Unmark() {
+	a.Mark = false
 }
 
 type Tunnel struct {
@@ -86,7 +110,7 @@ func NewSystem(lines []string) *System {
 		rate, _ := strconv.Atoi(numpat.FindString(l))
 		var va Action // default to nil
 		if rate > 0 {
-			va = OpenAction{At: names[0]}
+			va = &OpenAction{At: names[0]}
 		}
 		s.Valves[names[0]] = &Valve{
 			Name:        names[0],
@@ -110,7 +134,7 @@ func NewSystem(lines []string) *System {
 			}
 			s.Tunnels[t.Name] = t
 			s.Valves[v].Tunnels.Add(t.Name)
-			s.Valves[v].MoveActions = append(s.Valves[v].MoveActions, MoveAction{From: v, To: name, Via: t.Name})
+			s.Valves[v].MoveActions = append(s.Valves[v].MoveActions, &MoveAction{From: v, To: name, Via: t.Name})
 		}
 	}
 	return s
@@ -158,29 +182,19 @@ type cacheKey struct {
 	MaxTime int
 }
 
-type bestPath struct {
-	Valves   []string
-	Pressure int
-}
-
-var pathCache = make(map[cacheKey]bestPath)
+var pathCache = make(map[cacheKey][]Action)
 
 // Inputs:
 //   Memoize key:
 //     Current valve
 //     time remaining
-//   existing state:
-//     valves already open
-//     tunnels already traversed
 // Returns:
 //     best path found given the above -- a list of actions
-//       Go (tunnel)
-//       Open current valve
 
 // Return the path taken and total pressure released for the best path starting
 // from start that a total time of maxtime or less.
 // Store the result in pathcache to shortcut recursion.
-func (s *System) bestPathFrom(start string, time int, openValves Set[string], visitedTunnels Set[string]) bestPath {
+func (s *System) bestPathFrom(start string, time int) []Action {
 	key := cacheKey{Start: start, MaxTime: time}
 	if bp, ok := pathCache[key]; ok {
 		return bp
